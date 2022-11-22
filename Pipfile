@@ -8,6 +8,9 @@ python-dotenv = "*"
 google-api-python-client = "*"
 pytube = "*"
 pandas = "*"
+speechrecognition = "*"
+pydub = "*"
+youtube-transcript-api = "*"
 
 [dev-packages]
 
