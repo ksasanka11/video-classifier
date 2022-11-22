@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 python-dotenv = "*"
+google-api-python-client = "*"
+pytube = "*"
+pandas = "*"
 
 [dev-packages]
 
