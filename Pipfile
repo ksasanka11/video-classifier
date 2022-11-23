@@ -11,6 +11,8 @@ pandas = "*"
 speechrecognition = "*"
 pydub = "*"
 youtube-transcript-api = "*"
+tqdm = "*"
+transformers = "*"
 
 [dev-packages]
 

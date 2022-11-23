@@ -8,6 +8,8 @@ import argparse
 from pytube import YouTube
 import pandas as pd
 import speech_recognition as sr
+from youtube_transcript_api import YouTubeTranscriptApi
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -16,28 +18,25 @@ DEVELOPER_KEY = os.environ.get('API_KEY')
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 
-DATA_HEADERS = ['title', 'id', 'category']
+DATA_HEADERS = ['title', 'id', 'category', 'transcript']
 YOUTUBE_LINK = 'https://www.youtube.com/watch?v='
 AUDIO_DOWNLOAD_PATH = './audio/'
 
-# initialize recognizer
-recognizer = sr.Recognizer()
+NUMBER_OF_VIDEOS_PER_CATEGORY = 100
+categories = ['computer science', 'biology', 'environmental studies']
+TRANSCRIPT_LANGS = ['en', 'en-AU', 'en-BZ', 'en-CA', 'en-IE', 'en-JM', 'en-NZ', 'en-ZA', 'en-TT', 'en-GB', 'en-US']
+# categories = ['computer science']
 
+# read/create dataset
 try:
 	videos_data = pd.read_csv('data.csv')
 	videos = videos_data.to_numpy().tolist()
 except Exception as e:
-	# global videos lists
-	# videos_data = pd.DataFrame([], columns=DATA_HEADERS)
-	# videos_data.to_csv('data.csv', mode='w', index=False)
 	videos = []
 
 # download audio from videos
 def download_audio(unique_id):
-	# for video_item in videos:
 	try:
-		# unique_id = video_item[1]
-		# print(unique_id)
 		video = YouTube(YOUTUBE_LINK+unique_id)
 		# filtering the audio. File extension can be mp4/webm
 		# You can see all the available streams by print(video.streams)
@@ -51,30 +50,30 @@ def youtube_search(options):
 	youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
                     developerKey=DEVELOPER_KEY)
 
-    # Call the search.list method to retrieve results matching the specified
-    # query term.
-	search_response = youtube.search().list(q=options.q, type='video', videoDuration='medium',
+    # Call the search.list method to retrieve results matching the specified query term.
+	search_response = youtube.search().list(q=options.q, type='video', videoDuration='short', videoCaption='closedCaption',
             part='id,snippet', maxResults=options.max_results).execute()
 
-    # Add each result to the appropriate list, and then display the lists of
-    # matching videos, channels, and playlists.
-	for search_result in search_response.get('items', []):
+    # Add each result to the appropriate list, and then display the lists of matching videos, channels, and playlists.
+	for search_result in tqdm(search_response.get('items', [])):
 		if search_result['id']['kind'] == 'youtube#video':
 			video_details = [search_result['snippet']['title'], search_result['id']['videoId'], options.q]
+			tqdm.write(video_details[0])
+			srt = YouTubeTranscriptApi.get_transcript(video_details[1], languages=TRANSCRIPT_LANGS)
+			# prints the result
+			text = []
+			for _ in srt:
+				text.append(_['text'])
+			video_details.append(' '.join(text).replace('\n', ' '))
 			videos.append(video_details)
-			print('Downloading '+video_details[0]+'......')
-			download_audio(video_details[1])
-			print('Downloaded')
-
 
 # search for youtube videos
-# categories = ['computer science', 'biology', 'environmental studies']
-categories = ['computer science']
 if len(videos) <= 0:
-	for category in categories:
+	categories_progress_bar = tqdm(categories)
+	for category in categories_progress_bar:
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--q', help='Search term', default=category)
-		parser.add_argument('--max-results', help='Max results', default=1)
+		parser.add_argument('--max-results', help='Max results', default=NUMBER_OF_VIDEOS_PER_CATEGORY)
 		args = parser.parse_args()
 
 		try:
