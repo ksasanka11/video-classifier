@@ -13,6 +13,9 @@ pydub = "*"
 youtube-transcript-api = "*"
 tqdm = "*"
 transformers = "*"
+seaborn = "*"
+scikit-learn = "*"
+torch = "*"
 
 [dev-packages]
 
